@@ -1,4 +1,5 @@
-# file: shul.rb
+
+# file: shul.rb
 # author: James Robertson
 # license: MIT
 # summary: Shoes + XUL = SHUL
@@ -38,20 +39,42 @@ class Shul
     xml, _ = RXFHelper.read(source)
     doc = Rexle.new(xml)
 
-    doc.root.traverse do |x|
-      method(x.name.to_sym).call(x.attributes)
-    end
+    doc.root.elements.each {|x| method(x.name.to_sym).call(x) }
+
   end
 
-  def button(h)
-    
+  private
+  
+  def button(e)
+
+    h = e.attributes
     label = h[:label]
     command = h[:oncommand]    
     
-    @shoes.button 'label' do
+    @shoes.button label do
       eval command if command
     end
     
   end
+  
+  def hbox(e)
 
+    @shoes.flow do
+      e.elements.each {|x|  method(x.name.to_sym).call(x) }
+    end
+
+  end
+  
+  alias flow hbox  
+
+  def vbox(e)
+
+    @shoes.stack do
+      e.elements.each {|x|  method(x.name.to_sym).call(x) }
+    end
+
+  end
+  
+  alias stack vbox
+  
 end

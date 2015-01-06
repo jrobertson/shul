@@ -39,7 +39,7 @@ class Shul
     xml, _ = RXFHelper.read(source)
     doc = Rexle.new(xml)
 
-    doc.root.elements.each {|x| method(x.name.to_sym).call(x) }
+    doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
 
   end
 
@@ -56,21 +56,51 @@ class Shul
     end
     
   end
-  
+    
   def hbox(e)
 
     @shoes.flow do
-      e.elements.each {|x|  method(x.name.to_sym).call(x) }
+      e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
     end
 
   end
   
-  alias flow hbox  
+  alias flow hbox
 
+  def html_a(e)
+    
+
+    command = e.attributes[:oncommand]
+
+    @shoes.para(
+      @shoes.link(e.text).click do
+        eval command if command
+      end
+    )
+
+  end  
+  
+  def html_p(e)
+    @shoes.para e.text
+  end
+
+  def image(e)
+    h = e.attributes
+    @shoes.image h[:src], top: h[:top], left: h[:left]
+  end    
+  
+  def label(e)
+    @shoes.para e.attributes[:value]
+  end  
+
+  def textbox(e)
+    @shoes.edit_line
+  end
+  
   def vbox(e)
 
     @shoes.stack do
-      e.elements.each {|x|  method(x.name.to_sym).call(x) }
+      e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
     end
 
   end
