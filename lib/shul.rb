@@ -24,7 +24,7 @@ Shoes.app {Shul.new self, xml}
 # resources:
 #  https://en.wikipedia.org/wiki/Shoes_%28GUI_toolkit%29
 #  https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL
-# 
+#  http://www.xul.fr/tutorial/
 #------------------------------------------------------------------
 
 require 'rexle'
@@ -37,12 +37,16 @@ class Shul
     
     @shoes = shoes
     xml, _ = RXFHelper.read(source)
-    doc = Rexle.new(xml)
+    @doc = Rexle.new(xml)
 
-    doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
+    @doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
+
+    def @doc.element_by_id(id)
+      self.root.element("//*[@id='#{id}']")
+    end
 
   end
-
+    
   private
   
   def button(e)
@@ -56,7 +60,15 @@ class Shul
     end
     
   end
-    
+
+  def description(e)
+    @shoes.para e.attributes[:value]
+  end
+  
+  def doc()
+    @doc
+  end  
+  
   def hbox(e)
 
     @shoes.flow do
@@ -91,10 +103,19 @@ class Shul
   
   def label(e)
     @shoes.para e.attributes[:value]
-  end  
+  end
+  
+  def script(e)
+    eval e.text.unescape
+  end
 
   def textbox(e)
-    @shoes.edit_line
+    
+    def e.value()   self.attributes[:value]        end
+    def e.value=(v) self.attributes[:value] = v    end
+    
+    edit_line = @shoes.edit_line    
+    edit_line.change {|x|   e.value = x.text() }
   end
   
   def vbox(e)
