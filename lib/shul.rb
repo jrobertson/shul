@@ -114,8 +114,16 @@ class Shul
     def e.value()   self.attributes[:value]        end
     def e.value=(v) self.attributes[:value] = v    end
     
-    edit_line = @shoes.edit_line    
-    edit_line.change {|x|   e.value = x.text() }
+    name = if e.attributes[:multiline] and e.attributes[:multiline] == 'true' then
+      :edit_box
+    else
+      :edit_line
+    end
+    
+    obj = @shoes.method(name).call
+    obj.text = e.attributes[:value]
+    obj.change {|x|   e.value = x.text() }
+    
   end
   
   def vbox(e)
