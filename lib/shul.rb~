@@ -31,6 +31,19 @@ require 'rexle'
 require 'rxfhelper'
 
 
+class Rexle::Element
+
+  def obj()
+    @obj
+  end
+
+  def obj=(obj)
+    @obj = obj
+  end
+
+end
+
+
 class Shul
 
   def initialize(shoes, source)
@@ -65,8 +78,12 @@ class Shul
     label = h[label]
     command = h[oncommand]    
     
-    @shoes.button label do
+    e.obj = @shoes.button label do
       eval command if command
+    end
+    
+    def e.label=(v)
+      self.obj.style[:text] = v
     end
     
   end  
@@ -75,14 +92,16 @@ class Shul
     
     h = e.attributes
         
-    c = @shoes.check
-    c.checked = h[:checked] == 'true'
-    @shoes.inscription h[:label]
+    @shoes.flow do
+      c = @shoes.check      
+      c.checked = h[:checked] == 'true'
+      @shoes.para h[:label]
+    end
     
   end  
 
   def description(e)
-    @shoes.para e.attributes[:value]
+    e.obj = @shoes.para e.attributes[:value]
   end
   
   def doc()
@@ -90,14 +109,45 @@ class Shul
   end
   
   def editbox(e, name = :edit_line)
-    
-    def e.value()   self.attributes[:value]        end
-    def e.value=(v) self.attributes[:value] = v    end        
-    
+        
     obj = @shoes.method(name).call
     obj.text = e.attributes[:value]
-    obj.change {|x|   e.value = x.text() }
+    obj.change {|x|   e.value = x.text() if e.value != e.text}
+    e.obj =  obj
     
+    def e.value()
+      self.attributes[:value]
+    end
+      
+    def e.value=(v) 
+      self.attributes[:value] = v
+      self.obj.text = v
+    end    
+    
+  end
+  
+  # This method is under-development
+  #
+  def grid(e)
+    
+    # get the grid width
+    #grid_width = 100
+    
+    # get the columns
+    columns = e.element 'columns'
+    cols = columns.xpath 'column'
+    cols_flex = cols.map {|x| x.attributes[:flex].to_s.to_i}
+    
+    # get the rows
+    rows = e.element 'rows'
+    rows.each do |row|
+      a = row.xpath 'row'
+      # resize the width of each item
+      a.each do |x|
+        #x.width = 400
+        #puts "x: %s width: %s" + [x.inspect,  x.width]
+      end
+    end
   end
   
   def hbox(e)
@@ -115,7 +165,7 @@ class Shul
     command = e.attributes[:oncommand]
 
     @shoes.para(
-      @shoes.link(e.text).click do
+      e.obj = @shoes.link(e.text).click do
         eval command if command
       end
     )
@@ -123,7 +173,8 @@ class Shul
   end  
   
   def html_em(e)
-    @shoes.para(@shoes.em(e.text))
+    e.obj = obj =  @shoes.em(e.text)
+    @shoes.para()
   end
   
   alias html_i html_em
@@ -139,36 +190,36 @@ class Shul
   end  
   
   def html_p(e)
-    @shoes.para e.text
+    e.obj = @shoes.para e.text
     e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
   end
   
   def html_span(e)
-    @shoes.span e.text
+    e.obj = @shoes.span e.text
   end
   
   def html_strong(e)
-    @shoes.strong e.text
+    e.obj = @shoes.strong e.text
   end
   
   alias html_b html_strong
 
   def image(e)
     h = e.attributes
-    @shoes.image h[:src], top: h[:top], left: h[:left]
+    e.obj = @shoes.image h[:src], top: h[:top], left: h[:left]
   end    
   
   def label(e)
-    @shoes.para e.attributes[:value]
+    e.obj = @shoes.para e.attributes[:value]
   end
   
   def listbox(e)
     a = e.xpath 'listem/attribute::label'
-    @shoes.list_box items: a
+    e.obj = @shoes.list_box items: a
   end  
 
   def progressmeter(e)
-    @shoes.progress
+    e.obj = @shoes.progress
   end  
   
   def radiogroup(e)
@@ -181,11 +232,12 @@ class Shul
         
       x.value = x.attributes[:value]
       h = x.attributes
-      
-      r = @shoes.radio
-        
-      r.checked = h[:checked] == 'true'
-      @shoes.inscription h[:label]
+      @shoes.flow do
+        r = @shoes.radio :radiogroup01
+          
+        r.checked = h[:checked] == 'true'
+        @shoes.para h[:label]
+      end
       
     end
     

@@ -22,9 +22,12 @@ Shoes.app {Shul.new self, xml}
 =end
 
 # resources:
-#  https://en.wikipedia.org/wiki/Shoes_%28GUI_toolkit%29
-#  https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL
-#  http://www.xul.fr/tutorial/
+#   xul:
+#     https://en.wikipedia.org/wiki/Shoes_%28GUI_toolkit%29
+#     https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL
+#     http://www.xul.fr/tutorial/
+#   shoes:
+#     http://shoesrb.com/manual/Element.html
 #------------------------------------------------------------------
 
 require 'rexle'
@@ -33,240 +36,304 @@ require 'rxfhelper'
 
 class Rexle::Element
 
-  def obj()
-    @obj
-  end
-
-  def obj=(obj)
-    @obj = obj
-  end
+  def obj()      @obj        end
+  def obj=(obj)  @obj = obj  end  
 
 end
 
 
-class Shul
+module Shul
 
-  def initialize(shoes, source)
+  class Main
     
-    @shoes = shoes
-    
-    @doc = if source.is_a? Rexle then source
-    else
-      xml, _ = RXFHelper.read(source)
-      Rexle.new(xml)
-    end
+    def initialize(shoes, xml)
 
-    @doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
-
-    def @doc.element_by_id(id)
-      self.root.element("//*[@id='#{id}']")
-    end
-
-  end
-    
-  private
-  
-  def button(e)
-
-    buttonx e
-    
-  end
-  
-  def buttonx(e, label = :label, oncommand = :oncommand)
-
-    h = e.attributes
-    label = h[label]
-    command = h[oncommand]    
-    
-    e.obj = @shoes.button label do
-      eval command if command
-    end
-    
-    def e.label=(v)
-      self.obj.style[:text] = v
-    end
-    
-  end  
-  
-  def checkbox(e)
-    
-    h = e.attributes
-        
-    @shoes.flow do
-      c = @shoes.check      
-      c.checked = h[:checked] == 'true'
-      @shoes.para h[:label]
-    end
-    
-  end  
-
-  def description(e)
-    e.obj = @shoes.para e.attributes[:value]
-  end
-  
-  def doc()
-    @doc
-  end
-  
-  def editbox(e, name = :edit_line)
-        
-    obj = @shoes.method(name).call
-    obj.text = e.attributes[:value]
-    obj.change {|x|   e.value = x.text() if e.value != e.text}
-    e.obj =  obj
-    
-    def e.value()
-      self.attributes[:value]
-    end
+      doc = Rexle.new xml    
       
-    def e.value=(v) 
-      self.attributes[:value] = v
-      self.obj.text = v
-    end    
-    
+      shoes.app(resizeable: false, width: 100, height: 100) do  
+
+        shul = Shul::App.new self, doc
+          
+      end
+      
+    end
   end
-  
-  # This method is under-development
-  #
-  def grid(e)
     
-    # get the grid width
-    #grid_width = 100
     
-    # get the columns
-    columns = e.element 'columns'
-    cols = columns.xpath 'column'
-    cols_flex = cols.map {|x| x.attributes[:flex].to_s.to_i}
+  class App
     
-    # get the rows
-    rows = e.element 'rows'
-    rows.each do |row|
-      a = row.xpath 'row'
-      # resize the width of each item
-      a.each do |x|
-        #x.width = 400
-        #puts "x: %s width: %s" + [x.inspect,  x.width]
+    def initialize(shoes_app, source)
+      
+      doc = if source.is_a? Rexle then source
+      else
+        xml, _ = RXFHelper.read(source)
+        Rexle.new(xml)
+      end      
+
+      # To find out the window dimensions we must first render the app
+      shul = Window.new(shoes_app, doc)            
+
+      shoes_app.start do |app|
+
+        sleep 0.0001
+        
+        box = doc.root.element('hbox | vbox').obj
+
+        h = {title: 'Shul', width: box.width, height: box.height}\
+                                    .merge doc.root.attributes
+        
+        win = window(h) {  Window.new self, doc }       
+        win.start do |w|
+          sleep 0.0001
+          
+        end
+        app.close # closes the initial shoes app        
+        shul = nil
+
       end
     end
+    
   end
-  
-  def hbox(e)
 
-    @shoes.flow do
-      e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
+  class Window
+    
+    attr_reader :width, :height
+
+    def initialize(shoes, doc)
+      
+      @shoes = shoes
+      @width, @height = 100, 100
+      
+      @doc = doc
+
+      @doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
+
+      def @doc.element_by_id(id)
+        self.root.element("//*[@id='#{id}']")
+      end
+
+      
     end
+      
+    private
+    
+    def button(e)
 
-  end
-  
-  alias flow hbox
+      buttonx e
+      
+    end
+    
+    def buttonx(e, label = :label, oncommand = :oncommand)
 
-  def html_a(e)
-
-    command = e.attributes[:oncommand]
-
-    @shoes.para(
-      e.obj = @shoes.link(e.text).click do
+      h = e.attributes
+      label = h[label]
+      command = h[oncommand]    
+      
+      e.obj = @shoes.button label do
         eval command if command
       end
-    )
-
-  end  
-  
-  def html_em(e)
-    e.obj = obj =  @shoes.em(e.text)
-    @shoes.para()
-  end
-  
-  alias html_i html_em
-
-  def html_input(e)
-    
-    case e.attributes[:type]
-    when 'text'
-      editbox e
-    when 'button'
-      buttonx e, :value, :onclick
-    end
-  end  
-  
-  def html_p(e)
-    e.obj = @shoes.para e.text
-    e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
-  end
-  
-  def html_span(e)
-    e.obj = @shoes.span e.text
-  end
-  
-  def html_strong(e)
-    e.obj = @shoes.strong e.text
-  end
-  
-  alias html_b html_strong
-
-  def image(e)
-    h = e.attributes
-    e.obj = @shoes.image h[:src], top: h[:top], left: h[:left]
-  end    
-  
-  def label(e)
-    e.obj = @shoes.para e.attributes[:value]
-  end
-  
-  def listbox(e)
-    a = e.xpath 'listem/attribute::label'
-    e.obj = @shoes.list_box items: a
-  end  
-
-  def progressmeter(e)
-    e.obj = @shoes.progress
-  end  
-  
-  def radiogroup(e)
-
-    
-    e.xpath('radio').each do |x|
       
-      def x.value()   self.attributes[:value]        end
-      def x.value=(v) self.attributes[:value] = v    end       
-        
-      x.value = x.attributes[:value]
-      h = x.attributes
-      @shoes.flow do
-        r = @shoes.radio :radiogroup01
+      def e.label=(v)
+        self.obj.style[:text] = v
+      end
+      
+    end  
+    
+    def checkbox(e)
+      
+      h = e.attributes
           
-        r.checked = h[:checked] == 'true'
+      @shoes.flow do
+        c = @shoes.check      
+        c.checked = h[:checked] == 'true'
         @shoes.para h[:label]
       end
       
+    end  
+
+    def description(e)
+      e.obj = @shoes.para e.attributes[:value]
     end
     
-  end
-  
-  def script(e)
-    eval e.text.unescape
-  end
-
-  def textbox(e)
-    
-    name = if e.attributes[:multiline] and e.attributes[:multiline] == 'true' then
-      :edit_box
-    else
-      :edit_line
+    def doc()
+      @doc
     end
     
-    editbox e, name
+    def editbox(e, name = :edit_line)
+          
+      obj = @shoes.method(name).call
+      obj.text = e.attributes[:value]
+      obj.change {|x|   e.value = x.text() if e.value != e.text}
+      e.obj =  obj
+      
+      def e.value()
+        self.attributes[:value]
+      end
+        
+      def e.value=(v) 
+        self.attributes[:value] = v
+        self.obj.text = v
+      end    
+      
+    end
     
-  end
-  
-  def vbox(e)
+    def find_max_dimensions(e)
+      
+      a = e.elements.map(&:obj)
+      maxwidth = a.max_by{|x| x.width}.width      
+      maxheight = a.inject(0) {|r,x2| r += x2.height }
+      
+      [maxwidth.to_i, maxheight]
 
-    @shoes.stack do
+    end
+    
+    # This method is under-development
+    #
+    def grid(e)
+      
+      # get the grid width
+      #grid_width = 100
+      
+      # get the columns
+      columns = e.element 'columns'
+      cols = columns.xpath 'column'
+      cols_flex = cols.map {|x| x.attributes[:flex].to_s.to_i}
+      
+      # get the rows
+      rows = e.element 'rows'
+      rows.each do |row|
+        a = row.xpath 'row'
+        # resize the width of each item
+        a.each do |x|
+          #x.width = 400
+          #puts "x: %s width: %s" + [x.inspect,  x.width]
+        end
+      end
+    end
+    
+    def hbox(e)
+
+      flow = @shoes.flow do
+        e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
+      end
+      e.obj = flow
+
+    end
+    
+    alias flow hbox
+
+    def html_a(e)
+
+      command = e.attributes[:oncommand]
+
+      @shoes.para(
+        e.obj = @shoes.link(e.text).click do
+          eval command if command
+        end
+      )
+
+    end  
+    
+    def html_em(e)
+      e.obj = obj =  @shoes.em(e.text)
+      @shoes.para()
+    end
+    
+    alias html_i html_em
+
+    def html_input(e)
+      
+      case e.attributes[:type]
+      when 'text'
+        editbox e
+      when 'button'
+        buttonx e, :value, :onclick
+      end
+    end  
+    
+    def html_p(e)
+      e.obj = @shoes.para e.text
       e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
     end
+    
+    def html_span(e)
+      e.obj = @shoes.span e.text
+    end
+    
+    def html_strong(e)
+      e.obj = @shoes.strong e.text
+    end
+    
+    alias html_b html_strong
 
+    def image(e)
+      h = e.attributes
+      e.obj = @shoes.image h[:src], top: h[:top], left: h[:left]
+    end    
+    
+    def label(e)
+      e.obj = @shoes.para e.attributes[:value]
+    end
+    
+    def listbox(e)
+      a = e.xpath 'listem/attribute::label'
+      e.obj = @shoes.list_box items: a
+    end  
+
+    def progressmeter(e)
+      e.obj = @shoes.progress
+    end  
+    
+    def radiogroup(e)
+
+      
+      e.xpath('radio').each do |x|
+        
+        def x.value()   self.attributes[:value]        end
+        def x.value=(v) self.attributes[:value] = v    end       
+          
+        x.value = x.attributes[:value]
+        h = x.attributes
+        @shoes.flow do
+          r = @shoes.radio :radiogroup01
+            
+          r.checked = h[:checked] == 'true'
+          @shoes.para h[:label]
+        end
+        
+      end
+      
+    end
+    
+    def script(e)
+      eval e.text.unescape
+    end
+
+    def textbox(e)
+      
+      name = if e.attributes[:multiline] \
+                        and e.attributes[:multiline] == 'true' then
+        :edit_box
+      else
+        :edit_line
+      end
+      
+      editbox e, name
+      
+    end
+    
+    def vbox(e)
+
+      stack = @shoes.stack do
+        e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
+      end
+      
+      e.obj = stack
+      
+
+    end
+    
+    alias stack vbox
+    
   end
-  
-  alias stack vbox
-  
 end
