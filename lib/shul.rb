@@ -50,13 +50,29 @@ module Shul
 
   class Main
     
-    def initialize(shoes, xml)
+    def initialize(shoes, source)
 
-      doc = Rexle.new xml    
+      doc = if source.is_a? Rexle then source
+      else
+        xml, _ = RXFHelper.read(source)
+        Rexle.new(xml)
+      end    
       
-      shoes.app(resizeable: false, width: 100, height: 100) do  
+      attr = doc.root.attributes.to_h      
+      
+      bflag = if attr.has_key? :width and attr.has_key? :height then
+        
+        attr[:width] = attr[:width].to_i
+        attr[:height] = attr[:height].to_i
+        
+        false         
+      else
+        true
+      end
+      
+      shoes.app(attr) do  
 
-        shul = Shul::App.new self, doc
+        shul = Shul::App.new self, doc, refresh: bflag, attributes: attr
           
       end
       
@@ -66,33 +82,33 @@ module Shul
     
   class App
     
-    def initialize(shoes_app, source)
-      
-      doc = if source.is_a? Rexle then source
-      else
-        xml, _ = RXFHelper.read(source)
-        Rexle.new(xml)
-      end      
-
+    def initialize(shoes_app, doc, refresh: false, attributes: {title: 'Shul'})
+                        
       # To find out the window dimensions we must first render the app
       shul = Window.new(shoes_app, doc)            
 
-      shoes_app.start do |app|
-
-        sleep 0.0001
+      if refresh then
         
-        box = doc.root.element('hbox | vbox')
-        wdth, hght = find_max_dimensions(box)
+        h = attributes
+        
+        shoes_app.start do |app|
 
-        h = {title: 'Shul', width: wdth, height: hght}\
-                                    .merge doc.root.attributes
+          sleep 0.0001
+          
+          box = doc.root.element('hbox | vbox')          
 
-        win = window(h) {  Window.new self, doc }       
+          ht, wh = find_max_dimensions(box)
+          
+          h[:width],h[:height] = ht.to_i, wh.to_i
+          
+          win = window(h) {  Window.new self, doc }
 
-        app.close # closes the initial shoes app        
-        shul = nil
+          app.close # closes the initial shoes app        
+          shul = nil
 
+        end        
       end
+      
     end
     
     private
