@@ -51,15 +51,21 @@ class Shul
   
   def button(e)
 
+    buttonx e
+    
+  end
+  
+  def buttonx(e, label = :label, oncommand = :oncommand)
+
     h = e.attributes
-    label = h[:label]
-    command = h[:oncommand]    
+    label = h[label]
+    command = h[oncommand]    
     
     @shoes.button label do
       eval command if command
     end
     
-  end
+  end  
 
   def description(e)
     @shoes.para e.attributes[:value]
@@ -91,7 +97,6 @@ class Shul
   alias flow hbox
 
   def html_a(e)
-    
 
     command = e.attributes[:oncommand]
 
@@ -104,7 +109,13 @@ class Shul
   end  
 
   def html_input(e)
-    editbox e
+    
+    case e.attributes[:type]
+    when 'text'
+      editbox e
+    when 'button'
+      buttonx e, :value, :onclick
+    end
   end  
   
   def html_p(e)

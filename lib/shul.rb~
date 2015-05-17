@@ -132,7 +132,7 @@ class Shul
       :edit_line
     end
     
-    editbox name
+    editbox e, name
     
   end
   
