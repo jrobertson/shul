@@ -36,8 +36,12 @@ class Shul
   def initialize(shoes, source)
     
     @shoes = shoes
-    xml, _ = RXFHelper.read(source)
-    @doc = Rexle.new(xml)
+    
+    @doc = if source.is_a? Rexle then source
+    else
+      xml, _ = RXFHelper.read(source)
+      Rexle.new(xml)
+    end
 
     @doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
 
@@ -64,6 +68,16 @@ class Shul
     @shoes.button label do
       eval command if command
     end
+    
+  end  
+  
+  def checkbox(e)
+    
+    h = e.attributes
+        
+    c = @shoes.check
+    c.checked = h[:checked] == 'true'
+    @shoes.inscription h[:label]
     
   end  
 
@@ -121,6 +135,16 @@ class Shul
   def html_p(e)
     @shoes.para e.text
   end
+  
+  def html_span(e)
+    @shoes.span e.text
+  end
+  
+  def html_strong(e)
+    @shoes.strong e.text
+  end
+  
+  alias html_b html_strong
 
   def image(e)
     h = e.attributes
@@ -134,6 +158,10 @@ class Shul
   def listbox(e)
     a = e.xpath 'listem/attribute::label'
     @shoes.list_box items: a
+  end  
+
+  def progressmeter(e)
+    @shoes.progress
   end  
   
   def script(e)

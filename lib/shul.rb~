@@ -133,8 +133,7 @@ class Shul
   
   def listbox(e)
     a = e.xpath 'listem/attribute::label'
-    puts 'a : ' + a.inspect
-    @shoes.listbox items: a
+    @shoes.list_box items: a
   end  
   
   def script(e)
