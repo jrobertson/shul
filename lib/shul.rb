@@ -67,7 +67,18 @@ class Shul
   
   def doc()
     @doc
-  end  
+  end
+  
+  def editbox(e, name = :edit_line)
+    
+    def e.value()   self.attributes[:value]        end
+    def e.value=(v) self.attributes[:value] = v    end        
+    
+    obj = @shoes.method(name).call
+    obj.text = e.attributes[:value]
+    obj.change {|x|   e.value = x.text() }
+    
+  end
   
   def hbox(e)
 
@@ -91,6 +102,10 @@ class Shul
     )
 
   end  
+
+  def html_input(e)
+    editbox e
+  end  
   
   def html_p(e)
     @shoes.para e.text
@@ -111,18 +126,13 @@ class Shul
 
   def textbox(e)
     
-    def e.value()   self.attributes[:value]        end
-    def e.value=(v) self.attributes[:value] = v    end
-    
     name = if e.attributes[:multiline] and e.attributes[:multiline] == 'true' then
       :edit_box
     else
       :edit_line
     end
     
-    obj = @shoes.method(name).call
-    obj.text = e.attributes[:value]
-    obj.change {|x|   e.value = x.text() }
+    editbox e, name
     
   end
   
