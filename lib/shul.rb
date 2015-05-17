@@ -26,8 +26,12 @@ Shoes.app {Shul.new self, xml}
 #     https://en.wikipedia.org/wiki/Shoes_%28GUI_toolkit%29
 #     https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL
 #     http://www.xul.fr/tutorial/
+#     https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Tutorial/The_Box_Model
 #   shoes:
 #     http://shoesrb.com/manual/Element.html
+#     http://shoesrb.com/manual/App.html
+#     http://shoesrb.com/manual/Slots.html (floww or stacks)
+#     http://shoesrb.com/manual/Events.html
 #------------------------------------------------------------------
 
 require 'rexle'
@@ -77,21 +81,32 @@ module Shul
 
         sleep 0.0001
         
-        box = doc.root.element('hbox | vbox').obj
+        box = doc.root.element('hbox | vbox')
+        wdth, hght = find_max_dimensions(box)
 
-        h = {title: 'Shul', width: box.width, height: box.height}\
+        h = {title: 'Shul', width: wdth, height: hght}\
                                     .merge doc.root.attributes
-        
+
         win = window(h) {  Window.new self, doc }       
-        win.start do |w|
-          sleep 0.0001
-          
-        end
+
         app.close # closes the initial shoes app        
         shul = nil
 
       end
     end
+    
+    private
+    
+    def find_max_dimensions(e)
+      
+      a = e.elements.map(&:obj)
+
+      maxwidth = a.max_by{|x| x.width}.width      
+      maxheight = a.inject(0) {|r,x2| r += x2.height }
+      
+      [maxwidth, maxheight]
+
+    end    
     
   end
 
@@ -112,7 +127,6 @@ module Shul
         self.root.element("//*[@id='#{id}']")
       end
 
-      
     end
       
     private
@@ -176,16 +190,7 @@ module Shul
       end    
       
     end
-    
-    def find_max_dimensions(e)
-      
-      a = e.elements.map(&:obj)
-      maxwidth = a.max_by{|x| x.width}.width      
-      maxheight = a.inject(0) {|r,x2| r += x2.height }
-      
-      [maxwidth.to_i, maxheight]
 
-    end
     
     # This method is under-development
     #
@@ -285,7 +290,6 @@ module Shul
     end  
     
     def radiogroup(e)
-
       
       e.xpath('radio').each do |x|
         
