@@ -121,6 +121,12 @@ class Shul
     )
 
   end  
+  
+  def html_em(e)
+    @shoes.para(@shoes.em(e.text))
+  end
+  
+  alias html_i html_em
 
   def html_input(e)
     
@@ -134,6 +140,7 @@ class Shul
   
   def html_p(e)
     @shoes.para e.text
+    e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
   end
   
   def html_span(e)
@@ -163,6 +170,26 @@ class Shul
   def progressmeter(e)
     @shoes.progress
   end  
+  
+  def radiogroup(e)
+
+    
+    e.xpath('radio').each do |x|
+      
+      def x.value()   self.attributes[:value]        end
+      def x.value=(v) self.attributes[:value] = v    end       
+        
+      x.value = x.attributes[:value]
+      h = x.attributes
+      
+      r = @shoes.radio
+        
+      r.checked = h[:checked] == 'true'
+      @shoes.inscription h[:label]
+      
+    end
+    
+  end
   
   def script(e)
     eval e.text.unescape
