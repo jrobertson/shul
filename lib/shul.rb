@@ -131,6 +131,11 @@ class Shul
     @shoes.para e.attributes[:value]
   end
   
+  def listbox(e)
+    a = e.xpath 'listem/attribute::label'
+    @shoes.list_box items: a
+  end  
+  
   def script(e)
     eval e.text.unescape
   end
