@@ -10,14 +10,16 @@
 # e.g.
 #
 =begin
+require 'shul'
 
 xml =<<XML
-<app>
+<app title="Hello World" width='500' height='200'>
   <button id="yes1" label="Yes" oncommand="alert 'hello world'"/>
 </app>
 XML
 
-Shoes.app {Shul.new self, xml}
+
+Shul::Main.new Shoes, xml
 
 =end
 
@@ -34,21 +36,32 @@ Shoes.app {Shul.new self, xml}
 #     http://shoesrb.com/manual/Events.html
 #------------------------------------------------------------------
 
+
+
+# modifications
+#
+# 29-Mar-2016:  Code improvement: Uses refinements for the the 
+#                         Rexle::Element enhancement rather than a monkey patch
+#               * tested  using the green_shoes gem.
+
 require 'rexle'
 require 'rxfhelper'
 
 
-class Rexle::Element
+module RexleObject 
+  refine Rexle::Element do
 
-  def obj()      @obj        end
-  def obj=(obj)  @obj = obj  end  
+    def obj()      @obj        end
+    def obj=(obj)  @obj = obj  end  
 
+  end
 end
 
 
 module Shul
 
   class Main
+        
     
     def initialize(shoes, source)
 
@@ -58,7 +71,7 @@ module Shul
         Rexle.new(xml)
       end    
       
-      attr = doc.root.attributes.to_h      
+      attr = {width: 300, height: 200}.merge doc.root.attributes.to_h      
       
       bflag = if attr.has_key? :width and attr.has_key? :height then
         
@@ -72,7 +85,8 @@ module Shul
       
       shoes.app(attr) do  
 
-        shul = Shul::App.new self, doc, refresh: bflag, attributes: attr
+        shul = Shul::App.new self, doc, refresh: bflag, \
+                                          attributes: {title: 'Shul'}
           
       end
       
@@ -82,7 +96,7 @@ module Shul
     
   class App
     
-    def initialize(shoes_app, doc, refresh: false, attributes: {title: 'Shul'})
+    def initialize(shoes_app, doc, refresh: false, attributes: {})
                         
       # To find out the window dimensions we must first render the app
       shul = Window.new(shoes_app, doc)            
@@ -99,7 +113,7 @@ module Shul
 
           ht, wh = find_max_dimensions(box)
           
-          h[:width],h[:height] = ht.to_i, wh.to_i
+          h[:width],h[:height] = ht, wh
           
           win = window(h) {  Window.new self, doc }
 
@@ -127,6 +141,8 @@ module Shul
   end
 
   class Window
+    
+    using RexleObject
     
     attr_reader :width, :height
 
@@ -323,6 +339,10 @@ module Shul
         
       end
       
+    end
+    
+    def quit()
+      exit
     end
     
     def script(e)
