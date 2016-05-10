@@ -40,11 +40,13 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
-# 10-May-2016:  A label can now have a width. Helpful when using it within 
+# 10-May-2016:  An hbox or vbox can now have a margin
+#               A label can now have a width. Helpful when using it within  
 #               an hbox element
 # 29-Mar-2016:  Code improvement: Uses refinements for the the 
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
+
 
 require 'rexle'
 require 'rxfhelper'
@@ -252,7 +254,9 @@ module Shul
     
     def hbox(e)
 
-      flow = @shoes.flow do
+      margin = e.attributes[:margin].to_i      
+      
+      flow = @shoes.flow  margin: margin do
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       e.obj = flow
@@ -374,7 +378,8 @@ module Shul
     
     def vbox(e)
 
-      stack = @shoes.stack do
+      margin = e.attributes[:margin].to_i
+      stack = @shoes.stack margin: margin do
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       
