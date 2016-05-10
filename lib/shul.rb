@@ -40,16 +40,14 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
-# 10-May-2016:  An hbox or vbox can now have a margin
+# 10-May-2016:  The background color of a vbox can now be changed
+#               An hbox or vbox can now have a margin
 #               A label can now have a width. Helpful when using it within  
 #               an hbox element
 # 29-Mar-2016:  Code improvement: Uses refinements for the the 
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
 
-
-require 'rexle'
-require 'rxfhelper'
 
 
 module RexleObject 
@@ -378,8 +376,10 @@ module Shul
     
     def vbox(e)
 
-      margin = e.attributes[:margin].to_i
+      h = e.attributes
+      margin = h[:margin].to_i
       stack = @shoes.stack margin: margin do
+        @shoes.background h[:bgcolor] if h[:bgcolor]
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       
