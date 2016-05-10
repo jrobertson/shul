@@ -40,6 +40,8 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 10-May-2016:  A label can now have a width. Helpful when using it within 
+#               an hbox element
 # 29-Mar-2016:  Code improvement: Uses refinements for the the 
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
@@ -308,8 +310,16 @@ module Shul
       e.obj = @shoes.image h[:src], top: h[:top], left: h[:left]
     end    
     
+    # e.g. <label value='light' width='40'/>
+    
     def label(e)
-      e.obj = @shoes.para e.attributes[:value]
+      
+      if e.attributes[:width] then
+        e.obj = @shoes.para e.attributes[:value], width: e.attributes[:width]
+      else
+        e.obj = @shoes.para e.attributes[:value]
+      end
+      
     end
     
     def listbox(e)
