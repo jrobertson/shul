@@ -40,6 +40,9 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 26-Nov-2016:  A background color can be applied to an hbox using the 
+#               attribute *bgcolor*. The color of a label be changed using 
+#               the attribute *color*.
 # 10-May-2016:  The background color of a vbox can now be changed
 #               An hbox or vbox can now have a margin
 #               A label can now have a width. Helpful when using it within  
@@ -47,6 +50,7 @@ Shul::Main.new Shoes, xml
 # 29-Mar-2016:  Code improvement: Uses refinements for the the 
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
+
 
 
 
@@ -252,9 +256,11 @@ module Shul
     
     def hbox(e)
 
-      margin = e.attributes[:margin].to_i      
+      h = e.attributes
+      margin = h[:margin].to_i  
       
       flow = @shoes.flow  margin: margin do
+        @shoes.background h[:bgcolor] if h[:bgcolor]
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       e.obj = flow
@@ -312,16 +318,24 @@ module Shul
       e.obj = @shoes.image h[:src], top: h[:top], left: h[:left]
     end    
     
-    # e.g. <label value='light' width='40'/>
+    # e.g. <label value='light' width='40' color='#45a'/>
     
     def label(e)
       
-      if e.attributes[:width] then
-        e.obj = @shoes.para e.attributes[:value], width: e.attributes[:width]
-      else
-        e.obj = @shoes.para e.attributes[:value]
-      end
+      h = { }
+      h.merge!({width: e.attributes[:width]}) if e.attributes[:width]
+      h.merge!({stroke: e.attributes[:color]}) if e.attributes[:color]
+      e.obj = @shoes.para e.attributes[:value] , h
       
+    end
+
+    def location=(source)
+      
+      xml, _ = RXFHelper.read(source)
+      doc = Rexle.new(xml)
+      
+      @shoes.close
+
     end
     
     def listbox(e)

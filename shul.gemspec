@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'shul'
-  s.version = '0.3.6'
+  s.version = '0.3.7'
   s.summary = 'Shoes + XUL = SHUL'
   s.authors = ['James Robertson']
   s.files = Dir['lib/shul.rb']
