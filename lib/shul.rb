@@ -40,6 +40,7 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 10-Jan-2017:  Implemented methods value() and value=() for the label element
 # 06-Dec-2016:  bug fix: Removes the file /tmp/__green_shoes_temporary_file__
 #               to prevent a file lock on a thin client server setup
 # 26-Nov-2016:  A background color can be applied to an hbox using the 
@@ -53,7 +54,13 @@ Shul::Main.new Shoes, xml
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
 
+#require 'rexle'
 
+require 'requestor'
+
+
+eval Requestor.read('http://rorbuilder.info/r/ruby'){|x| x.require 'rexle'}
+require 'rxfhelper'
 
 
 module RexleObject 
@@ -96,6 +103,11 @@ module Shul
         def reload()
           puts 'not yet implemented'
         end
+        
+        button 'test' do
+          alert('fun')
+        end
+        
         
         shul = Shul::App.new self, doc, refresh: bflag, \
                                           attributes: {title: 'Shul'}
@@ -347,7 +359,18 @@ module Shul
       h = { }
       h.merge!({width: e.attributes[:width]}) if e.attributes[:width]
       h.merge!({stroke: e.attributes[:color]}) if e.attributes[:color]
+
       e.obj = @shoes.para e.attributes[:value] , h
+
+      
+      def e.value()
+        self.attributes[:value]
+      end
+        
+      def e.value=(v) 
+        self.attributes[:value] = v
+        self.obj.replace 'fffff'
+      end          
       
     end
 
@@ -397,6 +420,7 @@ module Shul
       eval "shoes = @shoes; " + e.text.unescape
     end
 
+    # e.g. <textbox id='tb' value='empty' size='40' multiline='true'/>
     def textbox(e)
       
       name = if e.attributes[:multiline] \

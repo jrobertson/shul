@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'shul'
-  s.version = '0.3.8'
+  s.version = '0.3.9'
   s.summary = 'Shoes + XUL = SHUL'
   s.authors = ['James Robertson']
   s.files = Dir['lib/shul.rb']
@@ -9,6 +9,6 @@ Gem::Specification.new do |s|
   s.signing_key = '../privatekeys/shul.pem'
   s.cert_chain  = ['gem-public_cert.pem']
   s.license = 'MIT'
-  s.email = 'james@r0bertson.co.uk'
+  s.email = 'james@jamesrobertson.eu'
   s.homepage = 'https://github.com/jrobertson/shul'
 end
