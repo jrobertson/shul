@@ -369,7 +369,7 @@ module Shul
         
       def e.value=(v) 
         self.attributes[:value] = v
-        self.obj.replace 'fffff'
+        self.obj.replace v
       end          
       
     end
