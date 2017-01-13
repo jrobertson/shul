@@ -40,6 +40,8 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 13-Jan-2017:  The script tag is now executed only after the 
+#               document elements have been loaded
 # 10-Jan-2017:  Implemented methods value() and value=() for the label element
 # 06-Dec-2016:  bug fix: Removes the file /tmp/__green_shoes_temporary_file__
 #               to prevent a file lock on a thin client server setup
@@ -104,9 +106,9 @@ module Shul
           puts 'not yet implemented'
         end
         
-        button 'test' do
-          alert('fun')
-        end
+        #button 'test' do
+        #  alert('fun')
+        #end
         
         
         shul = Shul::App.new self, doc, refresh: bflag, \
@@ -192,12 +194,16 @@ module Shul
       @width, @height = 100, 100
       
       @doc = doc
-
-      @doc.root.elements.each {|x| method(x.name.sub(':','_').to_sym).call(x) }
-
+      
       def @doc.element_by_id(id)
         self.root.element("//*[@id='#{id}']")
+      end      
+
+      @doc.root.elements.each do |x| 
+        method(x.name.sub(':','_').to_sym).call(x) unless x.name == 'script'
       end
+      
+      @doc.root.xpath('script').each {|x| script x }
 
     end
       
