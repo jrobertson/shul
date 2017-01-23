@@ -40,6 +40,7 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 23-Jan-2017:  A Vbox or Hbox width can now be set
 # 13-Jan-2017:  The script tag is now executed only after the 
 #               document elements have been loaded
 # 10-Jan-2017:  Implemented methods value() and value=() for the label element
@@ -295,11 +296,14 @@ module Shul
     end
     
     def hbox(e)
-
-      h = e.attributes
-      margin = h[:margin].to_i  
       
-      flow = @shoes.flow  margin: margin do
+      h2 = {}
+      h = e.attributes
+      
+      h2.merge!({margin: h[:margin].to_i})
+      h2.merge!({width: h[:width].to_i}) if h[:width]
+            
+      flow = @shoes.flow  h2 do
         @shoes.background h[:bgcolor] if h[:bgcolor]
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
@@ -364,8 +368,12 @@ module Shul
       
       h = { }
       h.merge!({width: e.attributes[:width]}) if e.attributes[:width]
+      h.merge!({margin: e.attributes[:margin].to_i}) if e.attributes[:margin]
       h.merge!({stroke: e.attributes[:color]}) if e.attributes[:color]
-
+      
+      # setting the para bgcolor doesn't work
+      #h.merge!({fill: e.attributes[:bgcolor]}) if e.attributes[:bgcolor]
+ 
       e.obj = @shoes.para e.attributes[:value] , h
 
       
@@ -374,7 +382,7 @@ module Shul
       end
         
       def e.value=(v) 
-        self.attributes[:value] = v
+        self.attributes[:value] = v        
         self.obj.replace v
       end          
       
@@ -442,9 +450,13 @@ module Shul
     
     def vbox(e)
 
+      h2 = {}
       h = e.attributes
-      margin = h[:margin].to_i
-      stack = @shoes.stack margin: margin do
+      
+      h2.merge!({margin: h[:margin].to_i}) if h[:margin]
+      h2.merge!({width: h[:width].to_i}) if h[:width]
+
+      stack = @shoes.stack h2 do
         @shoes.background h[:bgcolor] if h[:bgcolor]
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
