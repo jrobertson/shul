@@ -40,6 +40,7 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 21-May-2017:  Added a Document Object Model (DOM) class called Shule
 # 23-Jan-2017:  A Vbox or Hbox width can now be set
 # 13-Jan-2017:  The script tag is now executed only after the 
 #               document elements have been loaded
@@ -57,12 +58,7 @@ Shul::Main.new Shoes, xml
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
 
-#require 'rexle'
-
-require 'requestor'
-
-
-eval Requestor.read('http://rorbuilder.info/r/ruby'){|x| x.require 'rexle'}
+require 'domle'
 require 'rxfhelper'
 
 
@@ -75,19 +71,92 @@ module RexleObject
   end
 end
 
+DEFAULT_SHUL_CSS = <<CSS
+
+app {background-color: white}
+hbox {background-color: yellow}
+vbox {background-color: #0e0}
+label {background-color: #aa1}
+
+CSS
 
 module Shul
+  
+
+  class Shule < Domle
+
+    class Box < Element
+      attr2_accessor *%i(background-color margin padding)
+      
+    end  
+
+    class Component < Box
+      attr2_accessor *%i(width height)
+      
+    end  
+
+    
+    class App < Component
+
+    end
+
+    class Hbox < Box
+    end
+
+    class Vbox < Box
+    end
+
+    class Label < Component
+
+    end
+
+    
+    def inspect()    
+      "#<Shule:%s>" % [self.object_id]
+    end  
+    
+    
+    protected
+      
+    def add_default_css()
+      add_css DEFAULT_SHUL_CSS
+    end  
+
+    private
+    
+    def defined_elements()
+      super.merge({
+        app: Shule::App,
+        script: Shule::Script,
+        hbox: Shule::Hbox,
+        vbox: Shule::Vbox,
+        label: Shule::Label
+      })
+    end
+
+  end
+
+  
 
   class Main
         
     
     def initialize(shoes, source)
 
-      doc = if source.is_a? Rexle then source
+      if source.is_a? Rexle then 
+        
+        doc = source
+        
       else
-        xml, _ = RXFHelper.read(source)
-        Rexle.new(xml)
-      end    
+        
+        xml, type = RXFHelper.read(source)
+        # is the first line an XML processing instruction?
+        #jr210517 doc = Rexle.new(xml)
+        doc = Shule.new(xml)
+        #doc = Rexle.new(xml)
+        puts 'doc: ' + doc.xml.inspect
+        
+      end          
       
       attr = {width: 300, height: 200}.merge doc.root.attributes.to_h      
       
@@ -305,6 +374,11 @@ module Shul
             
       flow = @shoes.flow  h2 do
         @shoes.background h[:bgcolor] if h[:bgcolor]
+        
+        if e.style.has_key? :'background-color' then
+          @shoes.background e.style[:'background-color'] 
+        end
+        
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       e.obj = flow
@@ -457,12 +531,16 @@ module Shul
       h2.merge!({width: h[:width].to_i}) if h[:width]
 
       stack = @shoes.stack h2 do
+        
         @shoes.background h[:bgcolor] if h[:bgcolor]
+        
+        if e.style.has_key? :'background-color' then
+          @shoes.background e.style[:'background-color'] 
+        end
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
       end
       
-      e.obj = stack
-      
+      e.obj = stack      
 
     end
     
