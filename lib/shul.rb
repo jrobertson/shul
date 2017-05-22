@@ -11,6 +11,7 @@
 #
 =begin
 require 'shul'
+require 'green_shoes'
 
 xml =<<XML
 <app title="Hello World" width='500' height='200'>
@@ -18,8 +19,8 @@ xml =<<XML
 </app>
 XML
 
-
-Shul::Main.new Shoes, xml
+doc = Shul::Shule.new xml
+Shul::Main.new Shoes, doc
 
 =end
 
@@ -40,6 +41,7 @@ Shul::Main.new Shoes, xml
 
 # modifications
 #
+# 22-May-2017:  feature: The font size for a label can now be set
 # 21-May-2017:  Added a Document Object Model (DOM) class called Shule
 # 23-Jan-2017:  A Vbox or Hbox width can now be set
 # 13-Jan-2017:  The script tag is now executed only after the 
@@ -59,17 +61,8 @@ Shul::Main.new Shoes, xml
 #               * tested  using the green_shoes gem.
 
 require 'domle'
-require 'rxfhelper'
 
 
-module RexleObject 
-  refine Rexle::Element do
-
-    def obj()      @obj        end
-    def obj=(obj)  @obj = obj  end  
-
-  end
-end
 
 DEFAULT_SHUL_CSS = <<CSS
 
@@ -143,7 +136,7 @@ module Shul
     
     def initialize(shoes, source)
 
-      if source.is_a? Rexle then 
+      if source.is_a? Shule then 
         
         doc = source
         
@@ -151,10 +144,8 @@ module Shul
         
         xml, type = RXFHelper.read(source)
         # is the first line an XML processing instruction?
-        #jr210517 doc = Rexle.new(xml)
+
         doc = Shule.new(xml)
-        #doc = Rexle.new(xml)
-        puts 'doc: ' + doc.xml.inspect
         
       end          
       
@@ -375,6 +366,13 @@ module Shul
       flow = @shoes.flow  h2 do
         @shoes.background h[:bgcolor] if h[:bgcolor]
         
+        if e.text then
+          para_style = {}
+          
+          para_style = {size: e.style[:'font-size'].to_f} if e.style[:'font-size']
+          @shoes.para e.text.strip, para_style
+        end        
+        
         if e.style.has_key? :'background-color' then
           @shoes.background e.style[:'background-color'] 
         end
@@ -444,11 +442,13 @@ module Shul
       h.merge!({width: e.attributes[:width]}) if e.attributes[:width]
       h.merge!({margin: e.attributes[:margin].to_i}) if e.attributes[:margin]
       h.merge!({stroke: e.attributes[:color]}) if e.attributes[:color]
+      h.merge!({size: e.style[:'font-size'].to_f}) if e.style[:'font-size']      
       
       # setting the para bgcolor doesn't work
       #h.merge!({fill: e.attributes[:bgcolor]}) if e.attributes[:bgcolor]
  
-      e.obj = @shoes.para e.attributes[:value] , h
+      e.obj = @shoes.para e.attributes[:value] || e.text.strip , h           
+
 
       
       def e.value()
@@ -531,6 +531,13 @@ module Shul
       h2.merge!({width: h[:width].to_i}) if h[:width]
 
       stack = @shoes.stack h2 do
+
+        if e.text then
+          para_style = {}
+          
+          para_style = {size: e.style[:'font-size'].to_f} if e.style[:'font-size']
+          @shoes.para e.text.strip, para_style
+        end
         
         @shoes.background h[:bgcolor] if h[:bgcolor]
         
@@ -538,6 +545,7 @@ module Shul
           @shoes.background e.style[:'background-color'] 
         end
         e.elements.each {|x|  method(x.name.sub(':','_').to_sym).call(x) }
+        
       end
       
       e.obj = stack      
