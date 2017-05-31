@@ -63,6 +63,15 @@ Shul::Main.new Shoes, doc
 require 'domle'
 
 
+module RexleObject 
+  refine Rexle::Element do
+
+    def obj()      @obj        end
+    def obj=(obj)  @obj = obj  end  
+
+  end
+end
+
 
 DEFAULT_SHUL_CSS = <<CSS
 
