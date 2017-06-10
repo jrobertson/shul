@@ -41,6 +41,7 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 09-jun-2017:  bug fix: The button class has now been implemented with Shule
 # 22-May-2017:  feature: The font size for a label can now be set
 # 21-May-2017:  Added a Document Object Model (DOM) class called Shule
 # 23-Jan-2017:  A Vbox or Hbox width can now be set
@@ -72,7 +73,6 @@ module RexleObject
   end
 end
 
-
 DEFAULT_SHUL_CSS = <<CSS
 
 app {background-color: white}
@@ -101,6 +101,10 @@ module Shul
     class App < Component
 
     end
+    
+    class Button < Component
+
+    end    
 
     class Hbox < Box
     end
@@ -129,6 +133,7 @@ module Shul
     def defined_elements()
       super.merge({
         app: Shule::App,
+        button: Shule::Button,
         script: Shule::Script,
         hbox: Shule::Hbox,
         vbox: Shule::Vbox,
@@ -154,7 +159,12 @@ module Shul
         xml, type = RXFHelper.read(source)
         # is the first line an XML processing instruction?
 
-        doc = Shule.new(xml)
+        begin
+          doc = Shule.new(xml)
+        rescue
+          puts 'Shule: something went wrong'
+          puts '->' + ($!).inspect
+        end
         
       end          
       
@@ -449,6 +459,7 @@ module Shul
       
       h = { }
       h.merge!({width: e.attributes[:width]}) if e.attributes[:width]
+      h.merge!({height: e.attributes[:height]}) if e.attributes[:height]
       h.merge!({margin: e.attributes[:margin].to_i}) if e.attributes[:margin]
       h.merge!({stroke: e.attributes[:color]}) if e.attributes[:color]
       h.merge!({size: e.style[:'font-size'].to_f}) if e.style[:'font-size']      
