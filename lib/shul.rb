@@ -43,6 +43,7 @@ Shul::Main.new Shoes, doc
 #
 # 09-Aug-2017:  feature: onkeypress() now implemented. 
 #               Listboxes can now be rendered. Radiogroup events now functional
+#               Textbox implementation is now functional.
 # 09-jun-2017:  bug fix: The button class has now been implemented with Shule
 # 22-May-2017:  feature: The font size for a label can now be set
 # 21-May-2017:  Added a Document Object Model (DOM) class called Shule
@@ -141,6 +142,10 @@ module Shul
 
     end       
     
+    class Textbox < Component
+
+    end           
+    
     def inspect()    
       "#<Shule:%s>" % [self.object_id]
     end  
@@ -165,7 +170,8 @@ module Shul
         listbox: Shule::Listbox,
         listitem: Shule::Listitem,
         radiogroup: Shule::Radiogroup,
-        radio: Shule::Radio
+        radio: Shule::Radio,
+        textbox: Shule::Textbox
       })
     end
 
@@ -371,7 +377,7 @@ module Shul
           
       obj = @shoes.method(name).call
       obj.text = e.attributes[:value]
-      obj.change {|x|   e.value = x.text() if e.value != e.text}
+      obj.change {|x| e.value = x.text() if x.text != e.text}
       e.obj =  obj
       
       def e.value()
@@ -578,7 +584,7 @@ module Shul
 
     # e.g. <textbox id='tb' value='empty' size='40' multiline='true'/>
     def textbox(e)
-      
+
       name = if e.attributes[:multiline] \
                         and e.attributes[:multiline] == 'true' then
         :edit_box
