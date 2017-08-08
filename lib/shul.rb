@@ -42,7 +42,7 @@ Shul::Main.new Shoes, doc
 # modifications
 #
 # 09-Aug-2017:  feature: onkeypress() now implemented. 
-#               Listboxes can now be rendered
+#               Listboxes can now be rendered. Radiogroup events now functional
 # 09-jun-2017:  bug fix: The button class has now been implemented with Shule
 # 22-May-2017:  feature: The font size for a label can now be set
 # 21-May-2017:  Added a Document Object Model (DOM) class called Shule
@@ -69,7 +69,6 @@ require 'domle'
 
 
 
-
 module RexleObject 
   refine Rexle::Element do
 
@@ -87,6 +86,8 @@ vbox {background-color: #0e0}
 label {background-color: #aa1}
 listbox {background-color: #aa1}
 listitem {background-color: #aa1}
+radiogroup {background-color: #abc}
+radio {background-color: #884 }
 
 CSS
 
@@ -132,6 +133,13 @@ module Shul
 
     end        
 
+    class Radiogroup < Component
+
+    end   
+    
+    class Radio < Component
+
+    end       
     
     def inspect()    
       "#<Shule:%s>" % [self.object_id]
@@ -155,7 +163,9 @@ module Shul
         vbox: Shule::Vbox,
         label: Shule::Label,
         listbox: Shule::Listbox,
-        listitem: Shule::Listitem
+        listitem: Shule::Listitem,
+        radiogroup: Shule::Radiogroup,
+        radio: Shule::Radio
       })
     end
 
@@ -533,21 +543,28 @@ module Shul
     
     def radiogroup(e)
       
+      r = nil
+      
       e.xpath('radio').each do |x|
         
         def x.value()   self.attributes[:value]        end
         def x.value=(v) self.attributes[:value] = v    end       
           
-        x.value = x.attributes[:value]
+        x.value = x.attributes[:value].to_s
+        
         h = x.attributes
+
+        
         @shoes.flow do
+          
           r = @shoes.radio :radiogroup01
-            
+          r.click { e.value = x.value }
+
           r.checked = h[:checked] == 'true'
           @shoes.para h[:label]
         end
         
-      end
+      end      
       
     end
     
