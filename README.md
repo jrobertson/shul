@@ -21,7 +21,7 @@ The above example will display an alert box with the value of the textbox when t
 
 ## Resources
 
-* Introducing the Shul gem http://www.jamesrobertson.eu/snippets/2015/feb/28/introducing-the-shul-gem.html
+* Introducing the Shul gem http://www.jamesrobertson.eu/snippets/2017/aug/08/introducing-the-shul-gem.html
 * shul https://rubygems.org/gems/shul
 
 shul shoes gem
