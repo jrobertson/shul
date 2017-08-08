@@ -1,27 +1,19 @@
 # Shul: Fetching the value from a textbox
 
-    Shoes.setup do
-      gem 'shul'
-    end
-
     require 'shul'
+    require 'green_shoes'
 
     xml =<<XML
     <app title="Hello World">  
       <textbox id='tb' value='empty' size='40'/>
-      <button id="yes1" label="Yes" oncommand="alert(doc.element_by_id('tb').value)"/>
+      <button id="yes1" label="Yes" oncommand="alert(doc.element_by_id('tb').text)"/>
     </app>
     XML
 
-    Shoes.app {Shul.new self, xml}
+    Shul::Main.new Shoes, xml
 
 The above example will display an alert box with the value of the textbox when the button is pressed.
 
-## Running the example
-
-On my Linux box I typed the following:
-
-`/home/james/.shoes/federales/shoes test10.rb`
 
 ## Screenshot
 
@@ -29,6 +21,7 @@ On my Linux box I typed the following:
 
 ## Resources
 
-* ?Introducing the Shul gem http://www.jamesrobertson.eu/snippets/2015/feb/28/introducing-the-shul-gem.html?
+* Introducing the Shul gem http://www.jamesrobertson.eu/snippets/2015/feb/28/introducing-the-shul-gem.html
+* shul https://rubygems.org/gems/shul
 
 shul shoes gem
