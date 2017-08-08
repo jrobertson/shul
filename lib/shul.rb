@@ -41,6 +41,8 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 09-Aug-2017:  feature: onkeypress() now implemented. 
+#               Listboxes can now be rendered
 # 09-jun-2017:  bug fix: The button class has now been implemented with Shule
 # 22-May-2017:  feature: The font size for a label can now be set
 # 21-May-2017:  Added a Document Object Model (DOM) class called Shule
@@ -61,7 +63,11 @@ Shul::Main.new Shoes, doc
 #                         Rexle::Element enhancement rather than a monkey patch
 #               * tested  using the green_shoes gem.
 
+
+
 require 'domle'
+
+
 
 
 module RexleObject 
@@ -79,6 +85,8 @@ app {background-color: white}
 hbox {background-color: yellow}
 vbox {background-color: #0e0}
 label {background-color: #aa1}
+listbox {background-color: #aa1}
+listitem {background-color: #aa1}
 
 CSS
 
@@ -115,6 +123,14 @@ module Shul
     class Label < Component
 
     end
+    
+    class Listbox < Component
+
+    end
+
+    class Listitem < Component
+
+    end        
 
     
     def inspect()    
@@ -137,7 +153,9 @@ module Shul
         script: Shule::Script,
         hbox: Shule::Hbox,
         vbox: Shule::Vbox,
-        label: Shule::Label
+        label: Shule::Label,
+        listbox: Shule::Listbox,
+        listitem: Shule::Listitem
       })
     end
 
@@ -284,6 +302,14 @@ module Shul
       end
       
       @doc.root.xpath('script').each {|x| script x }
+      
+      h = @doc.root.attributes
+      
+      if h[:onkeypress] then
+        shoes.keypress do |k| 
+          method(h[:onkeypress][/^[a-z]\w+/].to_sym).call(k)
+        end
+      end
 
     end
       
@@ -492,9 +518,14 @@ module Shul
     end
     
     def listbox(e)
-      a = e.xpath 'listem/attribute::label'
+
+      a = e.xpath('listitem/attribute::label').map(&:to_s)
       e.obj = @shoes.list_box items: a
+#       
     end  
+    
+    def listitem()
+    end
 
     def progressmeter(e)
       e.obj = @shoes.progress
