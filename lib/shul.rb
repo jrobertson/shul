@@ -41,6 +41,8 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 10-Aug-2017:  feature: A Textbox element can now be created dynamically
+#                e.g. txt = e.create_element('textbox'); e.append_child txt
 # 09-Aug-2017:  feature: onkeypress() now implemented. 
 #               Listboxes can now be rendered. Radiogroup events now functional
 #               Textbox implementation is now functional.
@@ -65,16 +67,19 @@ Shul::Main.new Shoes, doc
 #               * tested  using the green_shoes gem.
 
 
-
 require 'domle'
-
 
 
 module RexleObject 
   refine Rexle::Element do
+    
+    @obj = nil
+    @obj_children = []
 
     def obj()      @obj        end
-    def obj=(obj)  @obj = obj  end  
+    def obj=(obj)  @obj = obj  end
+    def obj_children()      @obj_children        end
+    def obj_children=(obj)  @obj_children = obj  end        
 
   end
 end
@@ -96,9 +101,16 @@ module Shul
   
 
   class Shule < Domle
+    
+    attr_accessor :callback
 
     class Box < Element
       attr2_accessor *%i(background-color margin padding)
+
+      def append_child(obj)
+        self.add obj
+        @rexle.callback.add_element(self, obj)
+      end
       
     end  
 
@@ -106,7 +118,6 @@ module Shul
       attr2_accessor *%i(width height)
       
     end  
-
     
     class App < Component
 
@@ -142,9 +153,24 @@ module Shul
 
     end       
     
-    class Textbox < Component
+    class Textbox < Component      
 
+      attr2_accessor *%i(id value size)
+      
+      def initialize(name='textbox', attributes: nil, rexle: nil)
+        super(name, attributes: {value: '', size: '40'}, rexle: rexle)
+      end
     end           
+    
+    
+    def create_element(type)
+      
+      h = {
+        textbox: Shul::Shule::Textbox.new
+      }
+      
+      h[type.to_sym]
+    end    
     
     def inspect()    
       "#<Shule:%s>" % [self.object_id]
@@ -274,6 +300,8 @@ module Shul
         end        
       end
       
+      doc.callback = shul
+      
     end
 
     def reload()
@@ -315,7 +343,7 @@ module Shul
 
       @doc.root.elements.each do |x| 
         method(x.name.sub(':','_').to_sym).call(x) unless x.name == 'script'
-      end
+      end   
       
       @doc.root.xpath('script').each {|x| script x }
       
@@ -327,6 +355,17 @@ module Shul
         end
       end
 
+    end
+    
+    def add_element(node, x)
+
+      node.obj = method(x.name.sub(':','_').to_sym).call(x)
+      refresh()
+
+    end
+    
+    def refresh
+      @shoes.flush
     end
       
     private
@@ -519,10 +558,20 @@ module Shul
         
       def e.value=(v) 
         self.attributes[:value] = v        
-        self.obj.replace v
+        self.obj.replace v        
       end          
       
     end
+    
+    def render_elements()
+      
+      #@shoes.clear
+      @doc.root.elements.each do |x| 
+        method(x.name.sub(':','_').to_sym).call(x) unless x.name == 'script'
+      end      
+    end
+    
+    alias reload render_elements
 
     def location=(source)
       
