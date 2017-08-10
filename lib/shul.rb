@@ -41,6 +41,7 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 11-Aug-2017:  feature: An element can now be removed using method *remove*.
 # 10-Aug-2017:  feature: A Textbox element can now be created dynamically
 #                e.g. txt = e.create_element('textbox'); e.append_child txt
 # 09-Aug-2017:  feature: onkeypress() now implemented. 
@@ -105,11 +106,23 @@ module Shul
     attr_accessor :callback
 
     class Box < Element
-      attr2_accessor *%i(background-color margin padding)
+      attr2_accessor *%i(background-color id margin padding)
 
       def append_child(obj)
-        self.add obj
-        @rexle.callback.add_element(self, obj)
+
+        node = self.add obj
+        @rexle.callback.add_element(node, obj) if @rexle.callback
+      end
+      
+      def deep_clone() 
+
+        Shule.new(self.xml, rexle: @rexle).root
+
+      end      
+      
+      def remove()
+        @rexle.callback.remove_element(self) if @rexle.callback
+        self.delete   
       end
       
     end  
@@ -155,21 +168,24 @@ module Shul
     
     class Textbox < Component      
 
-      attr2_accessor *%i(id value size)
+      attr2_accessor *%i(value size)
       
       def initialize(name='textbox', attributes: nil, rexle: nil)
-        super(name, attributes: {value: '', size: '40'}, rexle: rexle)
+
+        h = {value: '', size: '40'}
+        h.merge!(attributes) if attributes
+        super(name, attributes: h, rexle: rexle)
       end
     end           
     
     
-    def create_element(type)
+    def create_element(type, id: '')
       
       h = {
-        textbox: Shul::Shule::Textbox.new
+        textbox: Shul::Shule::Textbox
       }
-      
-      h[type.to_sym]
+
+      h[type.to_sym].new(attributes: {id: id}, rexle: self)
     end    
     
     def inspect()    
@@ -208,7 +224,7 @@ module Shul
   class Main
         
     
-    def initialize(shoes, source)
+    def initialize(shoes, source)      
 
       if source.is_a? Shule then 
         
@@ -367,6 +383,11 @@ module Shul
     def refresh
       @shoes.flush
     end
+    
+    def remove_element(node)
+      node.obj.clear
+      refresh()
+    end    
       
     private
     
@@ -417,7 +438,7 @@ module Shul
       obj = @shoes.method(name).call
       obj.text = e.attributes[:value]
       obj.change {|x| e.value = x.text() if x.text != e.text}
-      e.obj =  obj
+
       
       def e.value()
         self.attributes[:value]
@@ -427,6 +448,8 @@ module Shul
         self.attributes[:value] = v
         self.obj.text = v
       end    
+      
+      e.obj =  obj
       
     end
 
