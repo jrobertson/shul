@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 
 # file: shul.rb
 # author: James Robertson
@@ -41,6 +42,7 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 12-Aug-2017:  feature: A Radiogroup can now be created or deleted dynamically
 # 11-Aug-2017:  feature: An element can now be removed using method *remove*.
 # 10-Aug-2017:  feature: A Textbox element can now be created dynamically
 #                e.g. txt = e.create_element('textbox'); e.append_child txt
@@ -68,7 +70,9 @@ Shul::Main.new Shoes, doc
 #               * tested  using the green_shoes gem.
 
 
+
 require 'domle'
+
 
 
 module RexleObject 
@@ -107,11 +111,18 @@ module Shul
 
     class Box < Element
       attr2_accessor *%i(background-color id margin padding)
+            
+      def initialize(name=nil, attributes: {}, rexle: nil)
+
+        name = self.class.to_s[/\w+$/].downcase
+        super(name, attributes: attributes, rexle: rexle)
+      end   
 
       def append_child(obj)
 
         node = self.add obj
-        @rexle.callback.add_element(node, obj) if @rexle.callback
+
+        @rexle.callback.add_element(node) if @rexle.callback
       end
       
       def deep_clone() 
@@ -159,17 +170,34 @@ module Shul
     end        
 
     class Radiogroup < Component
+      attr2_accessor *%i(value)
+      
+      def initialize(name='radiogroup', attributes: nil, rexle: nil)
 
+        h = {value: ''}
+        h.merge!(attributes) if attributes
+        super(name, attributes: VisualAttributes.new(h), rexle: rexle)
+      end            
+      
     end   
     
     class Radio < Component
+      
+      attr2_accessor *%i(label value)
+      
+      def initialize(name='radio', attributes: nil, rexle: nil)
+
+        h = {label: '', value: ''}
+        h.merge!(attributes) if attributes
+        super(name, attributes: VisualAttributes.new(h), rexle: rexle)
+      end      
 
     end       
     
     class Textbox < Component      
 
       attr2_accessor *%i(value size)
-      
+
       def initialize(name='textbox', attributes: nil, rexle: nil)
 
         h = {value: '', size: '40'}
@@ -179,13 +207,30 @@ module Shul
     end           
     
     
-    def create_element(type, id: '')
+    def create_element(type, attributes={})
       
       h = {
-        textbox: Shul::Shule::Textbox
+        textbox: Shul::Shule::Textbox,
+        radiogroup: Shul::Shule::Radiogroup,
+        radio: Shul::Shule::Radio
       }
 
-      h[type.to_sym].new(attributes: {id: id}, rexle: self)
+      data = attributes.delete :data
+
+      element = h[type.to_sym].new(attributes: attributes, rexle: self)
+      
+      if type == 'radiogroup' and data then
+        
+        a = data
+        a.each do |label, value|
+
+          element.add create_element('radio', label: label, value: value)
+
+        end
+        
+      end
+      
+      return element
     end    
     
     def inspect()    
@@ -344,6 +389,18 @@ module Shul
     
     using RexleObject
     
+    class Radiogroup
+      
+      def initialize(e)
+        @e = e
+      end
+      
+      def clear()
+        @e.elements.each {|x| x.obj.clear}
+      end
+      
+    end     
+    
     attr_reader :width, :height
 
     def initialize(shoes, doc)
@@ -373,15 +430,20 @@ module Shul
 
     end
     
-    def add_element(node, x)
+    def add_element(node)
 
-      node.obj = method(x.name.sub(':','_').to_sym).call(x)
+      node.obj = method(node.name.sub(':','_').to_sym).call(node)
+      
+      node.elements.each do |element|
+        element.obj = method(element.name.sub(':','_').to_sym).call(element)
+      end
+      
       refresh()
 
     end
     
     def refresh
-      @shoes.flush
+      @shoes.flush if @shoes
     end
     
     def remove_element(node)
@@ -619,31 +681,29 @@ module Shul
       e.obj = @shoes.progress
     end  
     
+    def radio(e)
+      
+      def e.value()   self.attributes[:value]        end
+      def e.value=(v) self.attributes[:value] = v    end       
+        
+      e.value = e.attributes[:value].to_s
+      
+      h = e.attributes        
+      e.obj = @shoes.flow do
+        r = @shoes.radio :radiogroup01
+        r.click {e.parent.value = e.value unless e.value.empty?}
+
+        r.checked = h[:checked] == 'true'
+        @shoes.para h[:label]
+      end
+    
+    end
+    
     def radiogroup(e)
       
-      r = nil
-      
-      e.xpath('radio').each do |x|
-        
-        def x.value()   self.attributes[:value]        end
-        def x.value=(v) self.attributes[:value] = v    end       
-          
-        x.value = x.attributes[:value].to_s
-        
-        h = x.attributes
-
-        
-        @shoes.flow do
-          
-          r = @shoes.radio :radiogroup01
-          r.click { e.value = x.value }
-
-          r.checked = h[:checked] == 'true'
-          @shoes.para h[:label]
-        end
-        
-      end      
-      
+     
+            
+      e.obj = Radiogroup.new e
     end
     
     def quit()
