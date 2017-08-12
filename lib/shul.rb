@@ -44,6 +44,8 @@ Shul::Main.new Shoes, doc
 #
 # 13-Aug-2017:  feature: A radio button checked value can now be 
 #                        changed from script
+#               feature: The default icon can now be changed by adding the 
+#                        icon attribute to the app element
 # 12-Aug-2017:  feature: A Radiogroup can now be created or deleted dynamically
 # 11-Aug-2017:  feature: An element can now be removed using method *remove*.
 # 10-Aug-2017:  feature: A Textbox element can now be created dynamically
@@ -74,6 +76,7 @@ Shul::Main.new Shoes, doc
 
 
 require 'domle'
+require 'tempfile'
 
 
 
@@ -429,6 +432,16 @@ module Shul
         shoes.keypress do |k| 
           method(h[:onkeypress][/^[a-z]\w+/].to_sym).call(k)
         end
+      end
+      
+      icon = h[:icon]
+      
+      if icon then
+        
+        file = Tempfile.new('shoes').path
+        File.write file, RXFHelper.read(icon).first
+        shoes.win.icon = file
+        
       end
 
     end
