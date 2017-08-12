@@ -179,6 +179,12 @@ module Shul
         super(name, attributes: VisualAttributes.new(h), rexle: rexle)
       end            
       
+      def append_item(label, value)
+        
+        self.add @rexle.create_element('radio', label: label, value: value)
+        
+      end
+      
     end   
     
     class Radio < Component
@@ -221,12 +227,7 @@ module Shul
       
       if type == 'radiogroup' and data then
         
-        a = data
-        a.each do |label, value|
-
-          element.add create_element('radio', label: label, value: value)
-
-        end
+        data.each {|label, value| element.append_item label, value }
         
       end
       
@@ -432,12 +433,7 @@ module Shul
     
     def add_element(node)
 
-      node.obj = method(node.name.sub(':','_').to_sym).call(node)
-      
-      node.elements.each do |element|
-        element.obj = method(element.name.sub(':','_').to_sym).call(element)
-      end
-      
+      node.obj = method(node.name.sub(':','_').to_sym).call(node)            
       refresh()
 
     end
@@ -696,14 +692,23 @@ module Shul
         r.checked = h[:checked] == 'true'
         @shoes.para h[:label]
       end
+      
     
     end
     
     def radiogroup(e)
       
-     
-            
+      e.xpath('radio').each {|node| radio node }            
       e.obj = Radiogroup.new e
+      
+      h = e.attributes
+      
+      if h[:onkeypress] then
+        @shoes.keypress do |k| 
+          method(h[:onkeypress][/^[a-z]\w+/].to_sym).call(k)
+        end
+      end      
+      
     end
     
     def quit()
