@@ -42,6 +42,8 @@ Shul::Main.new Shoes, doc
 
 # modifications
 #
+# 13-Aug-2017:  feature: A radio button checked value can now be 
+#                        changed from script
 # 12-Aug-2017:  feature: A Radiogroup can now be created or deleted dynamically
 # 11-Aug-2017:  feature: An element can now be removed using method *remove*.
 # 10-Aug-2017:  feature: A Textbox element can now be created dynamically
@@ -75,20 +77,6 @@ require 'domle'
 
 
 
-module RexleObject 
-  refine Rexle::Element do
-    
-    @obj = nil
-    @obj_children = []
-
-    def obj()      @obj        end
-    def obj=(obj)  @obj = obj  end
-    def obj_children()      @obj_children        end
-    def obj_children=(obj)  @obj_children = obj  end        
-
-  end
-end
-
 DEFAULT_SHUL_CSS = <<CSS
 
 app {background-color: white}
@@ -110,12 +98,14 @@ module Shul
     attr_accessor :callback
 
     class Box < Element
-      attr2_accessor *%i(background-color id margin padding)
+      attr2_accessor *%i(background-color id margin padding onkeypress)
             
       def initialize(name=nil, attributes: {}, rexle: nil)
 
         name = self.class.to_s[/\w+$/].downcase
         super(name, attributes: attributes, rexle: rexle)
+        @obj = nil
+        
       end   
 
       def append_child(obj)
@@ -123,6 +113,8 @@ module Shul
         node = self.add obj
 
         @rexle.callback.add_element(node) if @rexle.callback
+        
+        return node
       end
       
       def deep_clone() 
@@ -130,6 +122,12 @@ module Shul
         Shule.new(self.xml, rexle: @rexle).root
 
       end      
+      
+
+
+
+      def obj()      @obj        end
+      def obj=(obj)  @obj = obj  end      
       
       def remove()
         @rexle.callback.remove_element(self) if @rexle.callback
@@ -197,6 +195,12 @@ module Shul
         h.merge!(attributes) if attributes
         super(name, attributes: VisualAttributes.new(h), rexle: rexle)
       end      
+      
+      def checked
+
+        self.obj.contents[0].checked = true
+
+      end
 
     end       
     
@@ -386,9 +390,7 @@ module Shul
     
   end
 
-  class Window
-    
-    using RexleObject
+  class Window    
     
     class Radiogroup
       
