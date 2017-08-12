@@ -46,6 +46,7 @@ Shul::Main.new Shoes, doc
 #                        changed from script
 #               feature: The default icon can now be changed by adding the 
 #                        icon attribute to the app element
+#               feature: Implemented the onload event 
 # 12-Aug-2017:  feature: A Radiogroup can now be created or deleted dynamically
 # 11-Aug-2017:  feature: An element can now be removed using method *remove*.
 # 10-Aug-2017:  feature: A Textbox element can now be created dynamically
@@ -74,10 +75,9 @@ Shul::Main.new Shoes, doc
 #               * tested  using the green_shoes gem.
 
 
-
 require 'domle'
 require 'tempfile'
-
+require 'shellwords'
 
 
 DEFAULT_SHUL_CSS = <<CSS
@@ -126,15 +126,14 @@ module Shul
 
       end      
       
-
-
-
       def obj()      @obj        end
       def obj=(obj)  @obj = obj  end      
       
       def remove()
+
         @rexle.callback.remove_element(self) if @rexle.callback
-        self.delete   
+        self.delete
+        
       end
       
     end  
@@ -186,6 +185,14 @@ module Shul
         
       end
       
+      def radio(index)
+        
+        if index <= self.elements.length then
+          self.elements[index] 
+        end
+        
+      end
+      
     end   
     
     class Radio < Component
@@ -204,6 +211,15 @@ module Shul
         self.obj.contents[0].checked = true
 
       end
+      
+      def unchecked
+
+        # unchecking an item programatically doesn't seem to 
+        # be possible in green_shoes
+        
+        self.obj.contents[0].checked = false
+
+      end      
 
     end       
     
@@ -370,6 +386,16 @@ module Shul
       end
       
       doc.callback = shul
+
+      h = doc.root.attributes
+      
+      if h[:onload] then
+        name, raw_args = h[:onload].match(/(^[a-z]\w+)(?:\(([^\)]+))?/).captures
+        
+        m = shul.method(name.to_sym)
+        raw_args ? m.call(Shellwords::shellwords(raw_args)) : m.call
+
+      end      
       
     end
 
@@ -402,10 +428,24 @@ module Shul
       end
       
       def clear()
-        @e.elements.each {|x| x.obj.clear}
+
+
+        @e.elements.each do |x| 
+
+          x.obj.contents.clear_all
+
+          #x.obj.clear
+
+          x.obj = nil
+          x.delete
+          x = nil
+        end
+
+
       end
       
     end     
+    
     
     attr_reader :width, :height
 
@@ -434,6 +474,7 @@ module Shul
         end
       end
       
+      
       icon = h[:icon]
       
       if icon then
@@ -442,13 +483,13 @@ module Shul
         File.write file, RXFHelper.read(icon).first
         shoes.win.icon = file
         
-      end
+      end            
 
     end
     
     def add_element(node)
 
-      node.obj = method(node.name.sub(':','_').to_sym).call(node)            
+      node.obj = method(node.name.sub(':','_').to_sym).call(node)                  
       refresh()
 
     end
@@ -458,7 +499,9 @@ module Shul
     end
     
     def remove_element(node)
+
       node.obj.clear
+      node.obj = nil
       refresh()
     end    
       
@@ -645,8 +688,6 @@ module Shul
       #h.merge!({fill: e.attributes[:bgcolor]}) if e.attributes[:bgcolor]
  
       e.obj = @shoes.para e.attributes[:value] || e.text.strip , h           
-
-
       
       def e.value()
         self.attributes[:value]
@@ -682,7 +723,7 @@ module Shul
 
       a = e.xpath('listitem/attribute::label').map(&:to_s)
       e.obj = @shoes.list_box items: a
-#       
+
     end  
     
     def listitem()
@@ -699,22 +740,20 @@ module Shul
         
       e.value = e.attributes[:value].to_s
       
-      h = e.attributes        
+      h = e.attributes
       e.obj = @shoes.flow do
         r = @shoes.radio :radiogroup01
-        r.click {e.parent.value = e.value unless e.value.empty?}
+        r.click {e.parent.value = e.value}
 
         r.checked = h[:checked] == 'true'
         @shoes.para h[:label]
       end
-      
-    
+          
     end
     
     def radiogroup(e)
-      
+
       e.xpath('radio').each {|node| radio node }            
-      e.obj = Radiogroup.new e
       
       h = e.attributes
       
@@ -724,6 +763,7 @@ module Shul
         end
       end      
       
+      Radiogroup.new e
     end
     
     def quit()
